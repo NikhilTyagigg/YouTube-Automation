@@ -1,0 +1,26 @@
+{
+  "name": "youtube-automation-platform",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": ["frontend", "backend"],
+  "scripts": {
+    "dev": "concurrently -k -n frontend,backend -c green,blue \"npm:dev:frontend\" \"npm:dev:backend\"",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "dev:backend": "npm --workspace backend run dev",
+    "build": "npm --workspace frontend run build && npm --workspace backend run build",
+    "build:frontend": "npm --workspace frontend run build",
+    "build:backend": "npm --workspace backend run build",
+    "lint": "npm --workspace frontend run lint && npm --workspace backend run lint",
+    "db:generate": "npm --workspace backend run db:generate",
+    "db:migrate": "npm --workspace backend run db:migrate",
+    "db:deploy": "npm --workspace backend run db:deploy",
+    "db:seed": "npm --workspace backend run db:seed",
+    "db:studio": "npm --workspace backend run db:studio"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  }
+}

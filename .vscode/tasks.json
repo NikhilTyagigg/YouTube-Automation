@@ -1,0 +1,37 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Frontend: Vite development server",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--workspace",
+				"frontend",
+				"run",
+				"dev",
+				"--",
+				"--port",
+				"5176"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Frontend: Vite development server",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev:frontend",
+				"--",
+				"--port",
+				"5175"
+			],
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum VideoStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+}
+
+enum ChannelStatus {
+  CONNECTED
+  DISCONNECTED
+  ACTION_REQUIRED
+}
+
+enum NotificationType {
+  UPLOAD_SUCCESS
+  UPLOAD_FAILED
+  VIDEO_GENERATED
+  SCHEDULE_TRIGGERED
+  SYSTEM
+}
+
+model User {
+  id                 String           @id @default(cuid())
+  name               String
+  email              String           @unique
+  password           String
+  role               UserRole         @default(USER)
+  refreshTokens      RefreshToken[]
+  promptTemplates    PromptTemplate[]
+  channels           YoutubeChannel[]
+  notifications      Notification[]
+  settings           Settings?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId, expiresAt])
+  @@map("refresh_tokens")
+}
+
+model PromptTemplate {
+  id             String         @id @default(cuid())
+  name           String
+  category       String
+  basePrompt     String         @db.Text
+  language       String         @default("English")
+  style          String         @default("Cinematic")
+  targetAudience String         @default("")
+  duration       String         @default("60 sec")
+  isActive       Boolean        @default(true)
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  histories      PromptHistory[]
+  videos         GeneratedVideo[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([userId, isActive])
+  @@index([category])
+  @@map("prompt_templates")
+}
+
+model PromptHistory {
+  id               String         @id @default(cuid())
+  promptTemplateId String
+  promptTemplate   PromptTemplate @relation(fields: [promptTemplateId], references: [id], onDelete: Cascade)
+  originalPrompt   String         @db.Text
+  enhancedPrompt   String         @db.Text
+  finalPrompt      String         @db.Text
+  generatedAt      DateTime       @default(now())
+
+  @@index([promptTemplateId, generatedAt(sort: Desc)])
+  @@map("prompt_history")
+}
+
+model GeneratedVideo {
+  id             String          @id @default(cuid())
+  promptId       String
+  prompt         PromptTemplate  @relation(fields: [promptId], references: [id], onDelete: Restrict)
+  videoName      String
+  videoPath      String?
+  thumbnailPath  String?
+  status         VideoStatus     @default(PENDING)
+  duration       String          @default("0:00")
+  youtubeVideoId String?         @unique
+  metadata       VideoMetadata?
+  uploadJobs     UploadJob[]
+  analytics      VideoAnalytics[]
+  generatedAt    DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([status, generatedAt(sort: Desc)])
+  @@index([promptId, generatedAt(sort: Desc)])
+  @@map("generated_videos")
+}
+
+model VideoMetadata {
+  id          String         @id @default(cuid())
+  videoId     String         @unique
+  video       GeneratedVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  title       String
+  description String         @db.Text
+  hashtags    String[]       @default([])
+  updatedAt   DateTime       @updatedAt
+
+  @@map("video_metadata")
+}
+
+model YoutubeChannel {
+  id           String        @id @default(cuid())
+  channelName  String
+  email        String
+  channelId    String?
+  accessToken  String        @db.Text
+  refreshToken String        @db.Text
+  connectedAt  DateTime      @default(now())
+  status       ChannelStatus @default(CONNECTED)
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploadJobs   UploadJob[]
+  settings     Settings[]
+
+  @@unique([userId, channelId])
+  @@index([userId, status])
+  @@map("youtube_channels")
+}
+
+model UploadJob {
+  id            String         @id @default(cuid())
+  videoId       String
+  video         GeneratedVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  channelId     String
+  channel       YoutubeChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  status        UploadStatus   @default(PENDING)
+  scheduledTime DateTime
+  uploadedAt    DateTime?
+  errorMessage  String?        @db.Text
+  attempts      Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([status, scheduledTime])
+  @@index([channelId, status])
+  @@map("upload_jobs")
+}
+
+model VideoAnalytics {
+  id             String         @id @default(cuid())
+  videoId        String
+  video          GeneratedVideo @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  views          BigInt         @default(0)
+  likes          BigInt         @default(0)
+  comments       BigInt         @default(0)
+  watchTime      Float          @default(0)
+  ctr            Float          @default(0)
+  engagementRate Float          @default(0)
+  collectedAt    DateTime       @default(now())
+
+  @@index([videoId, collectedAt(sort: Desc)])
+  @@index([collectedAt])
+  @@unique([videoId, collectedAt])
+  @@map("video_analytics")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  message   String
+  type      NotificationType
+  read      Boolean          @default(false)
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model Settings {
+  id               String         @id @default(cuid())
+  userId           String         @unique
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploadTime       String         @default("09:00")
+  timezone         String         @default("UTC")
+  defaultLanguage  String         @default("English")
+  defaultDuration  String         @default("60 sec")
+  defaultStyle     String         @default("Cinematic")
+  geminiModel      String         @default("gemini-2.0-flash")
+  youtubeChannelId String?
+  youtubeChannel   YoutubeChannel? @relation(fields: [youtubeChannelId], references: [id], onDelete: SetNull)
+  dailyUploadLimit Int            @default(3)
+  notifications    Boolean        @default(true)
+  updatedAt        DateTime       @updatedAt
+
+  @@map("settings")
+}
