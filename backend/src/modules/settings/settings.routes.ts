@@ -5,7 +5,12 @@ import { authenticate } from '../../middleware/auth.js'
 import { asyncHandler } from '../../middleware/asyncHandler.js'
 import { validate } from '../../middleware/validate.js'
 
-const settingsSchema = z.object({ body: z.object({ uploadTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(), timezone: z.string().min(1).max(100).optional(), defaultLanguage: z.string().min(2).max(50).optional(), defaultDuration: z.string().max(40).optional(), defaultStyle: z.string().max(100).optional(), geminiModel: z.string().max(150).optional(), youtubeChannelId: z.string().nullable().optional(), dailyUploadLimit: z.number().int().min(1).max(20).optional(), notifications: z.boolean().optional() }).strict() })
+const timezoneSchema = z.string().min(1).max(100).refine((timezone) => {
+  try { new Intl.DateTimeFormat('en-US', { timeZone: timezone }); return true }
+  catch { return false }
+}, 'Timezone must be a valid IANA timezone')
+
+const settingsSchema = z.object({ body: z.object({ uploadTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(), timezone: timezoneSchema.optional(), defaultLanguage: z.string().min(2).max(50).optional(), defaultDuration: z.string().max(40).optional(), defaultStyle: z.string().max(100).optional(), geminiModel: z.string().max(150).optional(), youtubeChannelId: z.string().nullable().optional(), dailyUploadLimit: z.number().int().min(1).max(20).optional(), notifications: z.boolean().optional() }).strict() })
 
 export const settingsRoutes = Router()
 settingsRoutes.use(authenticate)

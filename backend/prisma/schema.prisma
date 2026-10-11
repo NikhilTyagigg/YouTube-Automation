@@ -114,6 +114,7 @@ model GeneratedVideo {
   videoPath      String?
   thumbnailPath  String?
   status         VideoStatus     @default(PENDING)
+  generationError String?        @db.Text
   duration       String          @default("0:00")
   youtubeVideoId String?         @unique
   metadata       VideoMetadata?
@@ -217,7 +218,7 @@ model Settings {
   defaultLanguage  String         @default("English")
   defaultDuration  String         @default("60 sec")
   defaultStyle     String         @default("Cinematic")
-  geminiModel      String         @default("gemini-2.0-flash")
+  geminiModel      String         @default("gemini-3.8-flash")
   youtubeChannelId String?
   youtubeChannel   YoutubeChannel? @relation(fields: [youtubeChannelId], references: [id], onDelete: SetNull)
   dailyUploadLimit Int            @default(3)

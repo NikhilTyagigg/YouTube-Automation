@@ -4,7 +4,7 @@ import { authenticate } from '../../middleware/auth.js'
 import { asyncHandler } from '../../middleware/asyncHandler.js'
 import { NotFoundError } from '../../utils/AppError.js'
 import { storageService } from '../../services/storage/storage.service.js'
-import { queueGeneration } from './video-generation.service.js'
+import { queueGeneration, retryGeneration } from './video-generation.service.js'
 import { z } from 'zod'
 import { validate } from '../../middleware/validate.js'
 import { routeParam } from '../../utils/routeParam.js'
@@ -17,8 +17,12 @@ videoRoutes.post('/generate', validate(z.object({ body: z.object({ promptId: z.s
   const video = await queueGeneration(request.user!.id, request.body.promptId)
   response.status(202).json({ success: true, data: video })
 }))
+videoRoutes.post('/:id/retry', asyncHandler(async (request, response) => {
+  const video = await retryGeneration(request.user!.id, routeParam(request, 'id'))
+  response.status(202).json({ success: true, data: video })
+}))
 videoRoutes.get('/', asyncHandler(async (request, response) => {
-  const videos = await prisma.generatedVideo.findMany({ where: { prompt: { userId: request.user!.id } }, include: { prompt: { select: { name: true } }, metadata: true }, orderBy: { generatedAt: 'desc' }, take: 100 })
+  const videos = await prisma.generatedVideo.findMany({ where: { prompt: { userId: request.user!.id } }, include: { prompt: { select: { id: true, name: true } }, metadata: true }, orderBy: { generatedAt: 'desc' }, take: 100 })
   response.json({ success: true, data: videos })
 }))
 videoRoutes.get('/:id', asyncHandler(async (request, response) => {

@@ -24,7 +24,7 @@ The API returns `{ success, data }` envelopes and a stable `{ success: false, er
 
 ## Scheduler
 
-The scheduler checks each account's `Settings.uploadTime` and `Settings.timezone` once per minute, limits runs using `dailyUploadLimit`, creates prompt history and generated-video records, then queues due YouTube uploads. Redis `SET NX EX` locks prevent duplicate daily runs across API replicas; when Redis is unavailable a process-local lock is used and a warning is logged. Production deployments should keep Redis available when running multiple backend replicas.
+The scheduler checks each account's `Settings.uploadTime` and `Settings.timezone` once per minute, limits runs using `dailyUploadLimit`, and skips accounts without a connected target channel. Accounts without active prompt templates receive one default trend-focused template. For each prompt category, Gemini Google Search grounding researches opportunities across the last 7, 30, 90, and 365 days; a research outage falls back to the saved prompt. Completed videos are queued for the next occurrence of the account's configured local upload time, regardless of notification preferences. Redis `SET NX EX` locks prevent duplicate daily runs across API replicas; when Redis is unavailable a process-local lock is used and a warning is logged. Production deployments should keep Redis available when running multiple backend replicas.
 
 ## OAuth and credentials
 

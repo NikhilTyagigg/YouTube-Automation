@@ -18,7 +18,7 @@ interface SettingsForm {
   dailyUploadLimit: number
   notifications: boolean
 }
-const initial: SettingsForm = { uploadTime: '09:00', timezone: 'UTC', defaultLanguage: 'English', defaultDuration: '60 sec', defaultStyle: 'Cinematic', geminiModel: 'gemini-2.0-flash', youtubeChannelId: null, dailyUploadLimit: 3, notifications: true }
+const initial: SettingsForm = { uploadTime: '09:00', timezone: 'UTC', defaultLanguage: 'English', defaultDuration: '60 sec', defaultStyle: 'Cinematic', geminiModel: 'gemini-3.8-flash', youtubeChannelId: null, dailyUploadLimit: 3, notifications: true }
 
 export function SettingsScreen() {
   const settingsQuery = useSettings()

@@ -25,8 +25,10 @@ export interface PromptTemplate {
 
 export interface VideoItem {
   id: string
+  promptId: string
   title: string
   prompt: string
+  generationError?: string | null
   date: string
   status: 'Pending' | 'Processing' | 'Generated' | 'Uploaded' | 'Failed'
   duration: string
